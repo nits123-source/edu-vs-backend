@@ -81,9 +81,7 @@ const UserController = {
       const refreshToken = generateRefreshToken(user);
       user.refreshToken=refreshToken;
       const updatedUser=await user.save();
-      console.log("updatedUser",updatedUser);
-      console.log("accessToken",accessToken);
-      console.log("refreshToken",refreshToken);
+      
       
   
       // Send response with token
@@ -91,6 +89,8 @@ const UserController = {
         message: 'Login successful',
         token:accessToken,
         refreshToken:refreshToken,
+        role:user.role,
+        username:user.username
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error', error });

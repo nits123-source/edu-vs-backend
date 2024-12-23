@@ -4,17 +4,44 @@ const ExamController = {
   // Create a new exam
   createExam: async (req, res) => {
     try {
-      const { name, description, date, subjects } = req.body;
+      const { name, description, date } = req.body;
 
-      // Validate input
-      if (!name ||  !subjects || !Array.isArray(subjects) || subjects.length === 0) {
-        return res.status(400).json({ error: 'Name and subjects are required.' });
+      // Validate that name is required
+      if (!name) {
+        return res.status(400).json({ error: 'Name is required.' });
       }
 
-      // Create the exam
-      const exam = new Exam({ name, description, date, subjects });
+      // Convert name to lowercase before saving
+      const exam = new Exam({ name: name.toLowerCase(), description, date });
       await exam.save();
       res.status(201).json({ message: 'Exam created successfully', exam });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Create multiple exams
+  createManyExams: async (req, res) => {
+    try {
+      const { exams } = req.body;
+
+      // Validate that examsData is an array and not empty
+      if (!Array.isArray(exams) || exams.length === 0) {
+        return res.status(400).json({ error: 'You must provide an array of exams.' });
+      }
+
+      // Validate that each exam has a required name and convert name to lowercase
+      const formattedExams = exams.map(exam => {
+        if (!exam.name) {
+          throw new Error('Each exam must have a name.');
+        }
+        return { ...exam, name: exam.name.toLowerCase() };
+      });
+
+      // Create multiple exams
+      const examsData = await Exam.insertMany(formattedExams);
+      res.status(201).json({ message: 'Exams created successfully', exams: examsData });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
@@ -24,7 +51,7 @@ const ExamController = {
   // Get all exams
   getAllExams: async (req, res) => {
     try {
-      const exams = await Exam.find().populate('subjects.subjectId');
+      const exams = await Exam.find();
       res.status(200).json(exams);
     } catch (err) {
       console.error(err);
@@ -36,7 +63,7 @@ const ExamController = {
   getExamById: async (req, res) => {
     try {
       const { id } = req.params;
-      const exam = await Exam.findById(id).populate('subjects.subjectId');
+      const exam = await Exam.findById(id);
 
       if (!exam) {
         return res.status(404).json({ error: 'Exam not found' });
@@ -53,7 +80,7 @@ const ExamController = {
   updateExam: async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, description, date, subjects } = req.body;
+      const { name, description, date } = req.body;
 
       const exam = await Exam.findById(id);
 
@@ -61,10 +88,10 @@ const ExamController = {
         return res.status(404).json({ error: 'Exam not found' });
       }
 
-      if (name) exam.name = name;
+      // Update fields, converting name to lowercase if provided
+      if (name) exam.name = name.toLowerCase();
       if (description) exam.description = description;
       if (date) exam.date = date;
-      if (subjects) exam.subjects = subjects;
 
       await exam.save();
       res.status(200).json({ message: 'Exam updated successfully', exam });
@@ -86,61 +113,6 @@ const ExamController = {
       }
 
       res.status(200).json({ message: 'Exam deleted successfully' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Add a quiz to a specific subject within an exam
-  addQuizToExam: async (req, res) => {
-    try {
-      const { examId, subjectId } = req.params;
-      const { questionText, options } = req.body;
-
-      if (!questionText || !options || !Array.isArray(options) || options.length === 0) {
-        return res.status(400).json({ error: 'Question text and options are required.' });
-      }
-
-      const exam = await Exam.findById(examId);
-
-      if (!exam) {
-        return res.status(404).json({ error: 'Exam not found' });
-      }
-
-      const subject = exam.subjects.find((sub) => sub.subjectId.toString() === subjectId);
-
-      if (!subject) {
-        return res.status(404).json({ error: 'Subject not found in this exam' });
-      }
-
-      subject.questions.push({ questionText, options });
-      await exam.save();
-
-      res.status(200).json({ message: 'Quiz added to subject successfully', exam });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-  // Get all questions for a specific exam and subject
-  getQuestionsForSubject: async (req, res) => {
-    try {
-      const { examId, subjectId } = req.params;
-
-      const exam = await Exam.findById(examId).populate('subjects.subjectId');
-
-      if (!exam) {
-        return res.status(404).json({ error: 'Exam not found' });
-      }
-
-      const subject = exam.subjects.find((sub) => sub.subjectId.toString() === subjectId);
-
-      if (!subject) {
-        return res.status(404).json({ error: 'Subject not found in this exam' });
-      }
-
-      res.status(200).json({ questions: subject.questions });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });

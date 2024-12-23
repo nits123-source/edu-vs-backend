@@ -7,6 +7,8 @@ const questionRouter = express.Router();
 // Route to create a new question
 questionRouter.post('/', authMiddleware, QuestionController.createQuestion);
 
+questionRouter.post("/many",authMiddleware,QuestionController.createManyQuestions)
+
 // Route to get all questions
 questionRouter.get('/', authMiddleware, QuestionController.getAllQuestions);
 

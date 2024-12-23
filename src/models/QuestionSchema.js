@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
-  questionText: { type: String, required: true },
-  subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
+  questionText: { type: String, required: true ,unique:true},
+  subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
+  examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam' },
   options: [
     {
       text: { type: String, required: true },
