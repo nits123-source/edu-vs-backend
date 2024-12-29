@@ -1,6 +1,7 @@
 const QuestionSchema = require('../models/QuestionSchema');
 const Subject = require('../models/SubjectSchema');
 const Exam = require('../models/ExamSchema'); // Import the Exam model
+const SubjectSchema = require('../models/SubjectSchema');
 
 const QuestionController = {
   // Create a new question
@@ -56,6 +57,7 @@ const QuestionController = {
   createManyQuestions: async (req, res) => {
     try {
       const { questions } = req.body;
+      console.log("questions",questions);
 
       if (!Array.isArray(questions) || questions.length === 0) {
         return res.status(400).json({ error: 'Questions array is required and cannot be empty.' });
@@ -66,7 +68,7 @@ const QuestionController = {
 
       for (const questionData of questions) {
         try {
-          const { questionText, subjectName, examName, options, difficulty } = questionData;
+          const { questionText, subjectName, examName, options, difficulty,fact,category } = questionData;
 
           // Validate required fields
           if (!questionText || !options || !Array.isArray(options) || options.length === 0) {
@@ -77,6 +79,7 @@ const QuestionController = {
           // Convert input fields to lowercase
           const subjectNameLower = subjectName ? subjectName.toLowerCase() : null;
           const examNameLower = examName ? examName.toLowerCase() : null;
+          const difficultyLower=difficulty.toLowerCase();
 
           // Find subject
           let subject = null;
@@ -98,6 +101,7 @@ const QuestionController = {
             }
             examId = exam._id;
           }
+          console.log("subjectId",subject,examId)
 
           // Create and save question
           const question = new QuestionSchema({
@@ -105,7 +109,9 @@ const QuestionController = {
             subjectId: subject ? subject._id : undefined,
             examId: examId || undefined,
             options,
-            difficulty: difficulty || undefined,
+            difficulty: difficultyLower || undefined,
+            fact:fact,
+            category
           });
 
           const savedQuestion = await question.save();
@@ -138,56 +144,84 @@ const QuestionController = {
   // Get all questions
   getAllQuestions: async (req, res) => {
     try {
-      const { page, limit } = req.query;
-      
-      // If pagination parameters are provided, use them
+      const { page, limit, subjectName, category } = req.query;
+  
+      // Decode subjectName and category if provided
+      const decodeSubjectName = subjectName ? decodeURIComponent(subjectName) : null;
+      const decodeCategory = category ? decodeURIComponent(category) : null;
+  
+      // Step 1: If subjectName is provided, find the corresponding subject
+      let query = {};
+      if (decodeSubjectName) {
+        const subject = await SubjectSchema.findOne({ name: decodeSubjectName });
+  
+        if (!subject) {
+          return res.status(404).json({ error: 'Subject not found' });
+        }
+  
+        query.subjectId = subject._id; // Add subjectId to the query
+      }
+  
+      // Step 2: If category is provided, add category to the query
+      if (decodeCategory) {
+        query.category = decodeCategory;
+      }
+  
+      // Step 3: Handle pagination if both page and limit are provided
       if (page && limit) {
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
-
-        const questions = await QuestionSchema.find()
+  
+        // Fetch questions based on the query with pagination
+        const questions = await QuestionSchema.find(query)
           .populate('subjectId', 'name')
           .populate('examId', 'name')
           .skip(skip)
           .limit(limitNum);
-
-        // Get total count for pagination info
-        const total = await QuestionSchema.countDocuments();
-
-        res.status(200).json({
+  
+        // Get total count for pagination
+        const total = await QuestionSchema.countDocuments(query);
+  
+        return res.status(200).json({
           questions,
           pagination: {
             total,
             page: pageNum,
             limit: limitNum,
-            totalPages: Math.ceil(total / limitNum)
-          }
+            totalPages: Math.ceil(total / limitNum),
+          },
         });
-      } else {
-        // If no pagination parameters, return all questions
-        const questions = await QuestionSchema.find()
-          .populate('subjectId', 'name')
-          .populate('examId', 'name');
-        
-        res.status(200).json({ questions });
       }
+  
+      // Step 4: If no pagination parameters, fetch all questions
+      const questions = await QuestionSchema.find(query)
+        .populate('subjectId', 'name')
+        .populate('examId', 'name');
+  
+      if (questions.length === 0) {
+        return res.status(404).json({ error: 'Questions not found' });
+      }
+  
+      return res.status(200).json({ questions });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
+  
 
   // Get questions by subject name
   getQuestionsBySubject: async (req, res) => {
     try {
-      const { subjectName } = req.params;
+      const { subjectName,category } = req.params;
+      const decodeSubjectName=decodeURIComponent(subjectName);
+      console.log("called only subject---------->",decodeSubjectName)
 
       // Convert subject name to lowercase
-      const subjectNameLower = subjectName.toLowerCase();
 
       // Find the subject
-      const subject = await Subject.findOne({ name: subjectNameLower });
+      const subject = await Subject.findOne({ name: decodeSubjectName,category });
       if (!subject) {
         return res.status(404).json({ error: 'Subject not found' });
       }
@@ -200,6 +234,43 @@ const QuestionController = {
       res.status(500).json({ error: 'Internal server error' });
     }
   },
+
+  getQuestionsBySubjectAndCategory: async (req, res) => {
+    console.log("called right controller-----------------------------",req)
+    try {
+      const { subjectName, category } = req.params;
+      console.log("req param,s------",req.params)
+      const decodeSubjectName=decodeURIComponent(subjectName);
+      const decodeCategory=decodeURIComponent(category);
+      console.log("decode data",decodeSubjectName,decodeSubjectName)
+  
+      // Convert subject name to lowercase
+      const subjectNameLower = decodeURIComponent(decodeSubjectName).toLowerCase();
+  
+      // Find the subject
+      const subject = await Subject.findOne({ name: subjectNameLower });
+      if (!subject) {
+        return res.status(404).json({ error: 'Subject not found from category' });
+      }
+  
+      // Find questions based on subjectId and category
+      const questions = await QuestionSchema.find({ 
+        subjectId: subject._id,
+        category: decodeCategory // Filter by category
+      });
+  
+      // If no questions are found
+      if (questions.length === 0) {
+        return res.status(404).json({ error: 'No questions found for this subject and category' });
+      }
+  
+      res.status(200).json(questions);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+  
 
   // Delete a question
   deleteQuestion: async (req, res) => {
@@ -224,6 +295,7 @@ const QuestionController = {
     try {
       const { id } = req.params;
       const { questionText, options, difficulty, subjectName, examName } = req.body;
+      console.log('called update question')
 
       const question = await QuestionSchema.findById(id);
 

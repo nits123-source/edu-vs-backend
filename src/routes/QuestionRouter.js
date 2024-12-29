@@ -13,6 +13,7 @@ questionRouter.post("/many",authMiddleware,QuestionController.createManyQuestion
 questionRouter.get('/', authMiddleware, QuestionController.getAllQuestions);
 
 // Route to get questions by subject name
+
 questionRouter.get('/:subjectName', authMiddleware, QuestionController.getQuestionsBySubject);
 
 // Route to update a question

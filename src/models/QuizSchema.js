@@ -6,7 +6,7 @@ const quizSchema = new mongoose.Schema({
   examName: { 
     type: String, 
     required: true, 
-    enum: ['SSC', 'Banking', 'Railways', 'UPSC'], // You can expand this list based on your exam types
+    
   },
   questions: [
     {

@@ -5,6 +5,7 @@ const TokenController = {
   refreshToken: async (req, res) => {
     try {
       const { refreshToken } = req.body;
+      console.log("refreshToken---------",refreshToken)
 
       if (!refreshToken) {
         return res.status(401).json({ error: 'Refresh token is required' });
