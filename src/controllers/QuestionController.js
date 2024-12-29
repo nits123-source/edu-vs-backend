@@ -57,7 +57,6 @@ const QuestionController = {
   createManyQuestions: async (req, res) => {
     try {
       const { questions } = req.body;
-      console.log("questions",questions);
 
       if (!Array.isArray(questions) || questions.length === 0) {
         return res.status(400).json({ error: 'Questions array is required and cannot be empty.' });
@@ -101,7 +100,6 @@ const QuestionController = {
             }
             examId = exam._id;
           }
-          console.log("subjectId",subject,examId)
 
           // Create and save question
           const question = new QuestionSchema({
@@ -216,7 +214,6 @@ const QuestionController = {
     try {
       const { subjectName,category } = req.params;
       const decodeSubjectName=decodeURIComponent(subjectName);
-      console.log("called only subject---------->",decodeSubjectName)
 
       // Convert subject name to lowercase
 
@@ -236,13 +233,10 @@ const QuestionController = {
   },
 
   getQuestionsBySubjectAndCategory: async (req, res) => {
-    console.log("called right controller-----------------------------",req)
     try {
       const { subjectName, category } = req.params;
-      console.log("req param,s------",req.params)
       const decodeSubjectName=decodeURIComponent(subjectName);
       const decodeCategory=decodeURIComponent(category);
-      console.log("decode data",decodeSubjectName,decodeSubjectName)
   
       // Convert subject name to lowercase
       const subjectNameLower = decodeURIComponent(decodeSubjectName).toLowerCase();
@@ -295,7 +289,6 @@ const QuestionController = {
     try {
       const { id } = req.params;
       const { questionText, options, difficulty, subjectName, examName } = req.body;
-      console.log('called update question')
 
       const question = await QuestionSchema.findById(id);
 

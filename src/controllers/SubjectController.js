@@ -11,7 +11,6 @@ const SubjectController = {
       }
 
       const { name, categories } = subjects[0];
-      console.log("subjkect----------",subjects)
 
       // Ensure categories are properly converted to lowercase
       const updatedCategories = categories.map((category) => category.toLowerCase());

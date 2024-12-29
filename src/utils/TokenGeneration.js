@@ -2,7 +2,6 @@
 const jwt=require("jsonwebtoken");
 function generateAccessToken(user) {
     try {
-      console.log("User from token generation", user);
   
       if (!user || !user._id || !user.username || !user.contact) {
         throw new Error("Missing required user fields for token generation");
@@ -25,7 +24,6 @@ function generateAccessToken(user) {
   // Helper function to generate a refresh token
   function generateRefreshToken(user) {
     try {
-      console.log("User from token generation", user);
   
       if (!user || !user._id || !user.username || !user.contact) {
         throw new Error("Missing required user fields for token generation");

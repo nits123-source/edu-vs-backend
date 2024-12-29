@@ -15,7 +15,6 @@ const UserController = {
   async register(req, res) {
     try {
       const { username, contact, password, role } = req.body;
-      console.log("req.body",req.body);
 
       // Check for duplicate contact
       const existingUser = await User.findOne({ contact });
@@ -51,7 +50,6 @@ const UserController = {
   },
   async login (req, res){
     const { contact, password } = req.body;
-    console.log("req.body",req.body);
   
     // Validate the input
     if (!contact) {
@@ -64,14 +62,12 @@ const UserController = {
     try {
       // Find the user by email or phone
       const user = await User.findOne({ contact });
-      console.log("user",user);
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
   
       // Check if password matches
       const isMatch = await bcrypt.compare(password, user.password);
-      console.log("isMatch",isMatch);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
