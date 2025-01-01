@@ -1,6 +1,7 @@
 const express = require('express');
 const QuestionController = require('../controllers/QuestionController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { deleteMany } = require('../models/QuestionSchema');
 
 const questionRouter = express.Router();
 
@@ -14,12 +15,14 @@ questionRouter.get('/', authMiddleware, QuestionController.getAllQuestions);
 
 // Route to get questions by subject name
 
-questionRouter.get('/:subjectName', authMiddleware, QuestionController.getQuestionsBySubject);
+// questionRouter.get('/:subjectName', authMiddleware, QuestionController.getQuestionsBySubject);
 
-// Route to update a question
-questionRouter.put('/:id', authMiddleware, QuestionController.updateQuestion);
+// // Route to update a question
+// questionRouter.put('/:id', authMiddleware, QuestionController.updateQuestion);
 
-// Route to delete a question
-questionRouter.delete('/:id', authMiddleware, QuestionController.deleteQuestion);
+// // Route to delete a question
+// questionRouter.delete('/:id', authMiddleware, QuestionController.deleteQuestion);
+
+questionRouter.post("/delete",QuestionController.deleteQuestion)
 
 module.exports = questionRouter;

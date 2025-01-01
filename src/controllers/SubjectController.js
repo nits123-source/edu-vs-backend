@@ -47,8 +47,10 @@ const SubjectController = {
         return res.status(400).json({ error: 'Subjects array is required' });
       }
   
+      // Validate the subjects
+
       const invalidSubjects = subjects.filter(
-        (subject) => !subject.name || !subject.categories || !Array.isArray(subject.categories) || subject.categories.length === 0
+        (subject) => !subject.name || !subject.category || !Array.isArray(subject.category) || subject.category.length === 0
       );
   
       if (invalidSubjects.length > 0) {
@@ -58,36 +60,47 @@ const SubjectController = {
         });
       }
   
+      // Normalize subject names and categories to lower case for consistency
+      console.log("subjects---------",subjects);
+      const normalizedSubjects = subjects.map((subject) => ({
+        name: subject.name.toLowerCase(),
+        categories: subject.category.map((category) => category.toLowerCase()),
+      }));
+  
       // Check for duplicates
-      const existingSubjects = await Subject.find({
-        name: { $in: subjects.map(subject => subject.name.toLowerCase()) }
-      });
+      // const existingSubjects = await Subject.find({
+      //   name: { $in: normalizedSubjects.map(subject => subject.name) }
+      // });
   
-      const existingSubjectNames = existingSubjects.map(subject => subject.name.toLowerCase());
-      const subjectsToCreate = subjects.filter(
-        (subject) => !existingSubjectNames.includes(subject.name.toLowerCase())
-      );
+      // const existingSubjectNames = existingSubjects.map(subject => subject.name);
+      // const subjectsToCreate = normalizedSubjects.filter(
+      //   (subject) => !existingSubjectNames.includes(subject.name)
+      // );
   
-      if (subjectsToCreate.length === 0) {
-        return res.status(400).json({
-          error: 'All provided subjects already exist.',
-          existingSubjects: existingSubjectNames,
-        });
-      }
+      // if (subjectsToCreate.length === 0) {
+      //   return res.status(400).json({
+      //     error: 'All provided subjects already exist.',
+      //     existingSubjects: existingSubjectNames,
+      //   });
+      // }
   
       // Proceed with creating only non-existing subjects
-      const subjectsToInsert = subjectsToCreate.map((subject) => ({
-        name: subject.name.toLowerCase(),
-        categories: subject.categories.map((category) => category.toLowerCase()),
-        createdBy: req.user.userId,
+      const subjectsToInsert = normalizedSubjects.map((subject) => ({
+        ...subject,
+        createdBy: req.user.userId,  // Adding user ID who created the subject
       }));
   
       const createdSubjects = await Subject.insertMany(subjectsToInsert);
+  
+      // Prepare response
+      const createdSubjectNames = createdSubjects.map(subject => subject.name);
+  
       res.status(201).json({
         message: 'Subjects created successfully',
-        subjects: createdSubjects,
-        skippedSubjects: existingSubjectNames,
+        createdSubjects: createdSubjectNames,
+        // skippedSubjects: existingSubjectNames,
       });
+  
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -96,6 +109,7 @@ const SubjectController = {
 
   // Get all subjects
   async getAllSubjects(req, res) {
+    console.log("called get bsubject")
     try {
       const subjects = await Subject.find();
       res.status(200).json(subjects);

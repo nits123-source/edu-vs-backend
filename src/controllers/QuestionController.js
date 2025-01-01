@@ -1,7 +1,7 @@
 const QuestionSchema = require('../models/QuestionSchema');
-const Subject = require('../models/SubjectSchema');
 const Exam = require('../models/ExamSchema'); // Import the Exam model
 const SubjectSchema = require('../models/SubjectSchema');
+const Subject =require("../models/SubjectSchema")
 
 const QuestionController = {
   // Create a new question
@@ -109,7 +109,7 @@ const QuestionController = {
             options,
             difficulty: difficultyLower || undefined,
             fact:fact,
-            category
+            category:category.toLowerCase(),
           });
 
           const savedQuestion = await question.save();
@@ -147,31 +147,31 @@ const QuestionController = {
       // Decode subjectName and category if provided
       const decodeSubjectName = subjectName ? decodeURIComponent(subjectName) : null;
       const decodeCategory = category ? decodeURIComponent(category) : null;
+      console.log("subject and category", decodeSubjectName, decodeCategory);
   
-      // Step 1: If subjectName is provided, find the corresponding subject
+      // Step 1: Build query object
       let query = {};
       if (decodeSubjectName) {
         const subject = await SubjectSchema.findOne({ name: decodeSubjectName });
-  
         if (!subject) {
           return res.status(404).json({ error: 'Subject not found' });
         }
-  
-        query.subjectId = subject._id; // Add subjectId to the query
+        query.subjectId = subject._id;
       }
   
-      // Step 2: If category is provided, add category to the query
       if (decodeCategory) {
         query.category = decodeCategory;
       }
   
-      // Step 3: Handle pagination if both page and limit are provided
+      console.log("query", query);
+  
+      // Step 2: Handle pagination if both page and limit are provided
       if (page && limit) {
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
         const skip = (pageNum - 1) * limitNum;
   
-        // Fetch questions based on the query with pagination
+        // Fetch questions with pagination and populate related fields
         const questions = await QuestionSchema.find(query)
           .populate('subjectId', 'name')
           .populate('examId', 'name')
@@ -192,7 +192,7 @@ const QuestionController = {
         });
       }
   
-      // Step 4: If no pagination parameters, fetch all questions
+      // Step 3: If no pagination parameters, fetch all questions
       const questions = await QuestionSchema.find(query)
         .populate('subjectId', 'name')
         .populate('examId', 'name');
@@ -204,7 +204,48 @@ const QuestionController = {
       return res.status(200).json({ questions });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+  
+
+   deleteQuestion : async (req, res) => {
+    try {
+      const { subjectName, category } = req.body;
+  
+      if (!subjectName) {
+        return res.status(400).json({ message: 'Subject name is required.' });
+      }
+  
+      // Find the subject by name
+      console.log("subjectyName",subjectName)
+      const subject = await SubjectSchema.findOne({ name: subjectName });
+  
+      if (!subject) {
+        return res.status(404).json({ message: 'Subject not found.' });
+      }
+  
+      // Create the query object
+      const query = { subjectId: subject._id };
+      if (category) {
+        query.category = category;
+      }
+  
+      // Delete the question(s) based on the query
+      const deletedQuestion = await QuestionSchema.deleteMany(query);
+  
+      if (deletedQuestion.deletedCount === 0) {
+        return res.status(404).json({
+          message: 'No questions found for the given subject and category.',
+        });
+      }
+  
+      res.status(200).json({
+        message: `${deletedQuestion.deletedCount} question(s) deleted successfully.`,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'An error occurred while deleting the question.', error: error.message });
     }
   },
   
@@ -267,22 +308,22 @@ const QuestionController = {
   
 
   // Delete a question
-  deleteQuestion: async (req, res) => {
-    try {
-      const { id } = req.params;
+  // deleteQuestion: async (req, res) => {
+  //   try {
+  //     const { id } = req.params;
 
-      const question = await QuestionSchema.findByIdAndDelete(id);
+  //     const question = await QuestionSchema.findByIdAndDelete(id);
 
-      if (!question) {
-        return res.status(404).json({ error: 'Question not found' });
-      }
+  //     if (!question) {
+  //       return res.status(404).json({ error: 'Question not found' });
+  //     }
 
-      res.status(200).json({ message: 'Question deleted successfully' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
+  //     res.status(200).json({ message: 'Question deleted successfully' });
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).json({ error: 'Internal server error' });
+  //   }
+  // },
 
   // Update a question
   updateQuestion: async (req, res) => {
