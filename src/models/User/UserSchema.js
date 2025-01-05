@@ -19,6 +19,15 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     refreshToken: { type: String } ,
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
+    bookmarks: [
+      {
+        itemId: { type: mongoose.Schema.Types.ObjectId, required: true }, // ID of the bookmarked item
+        itemType: { type: String, enum: ["question", "article", "video"], required: true }, // Type of the item
+        title: { type: String }, // Title or description of the item
+        url: { type: String }, // Link to the item (if applicable)
+        date: { type: Date, default: Date.now }, // Date the item was bookmarked
+      },
+    ],
   });
   
   module.exports = mongoose.model('User', userSchema);

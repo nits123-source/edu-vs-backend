@@ -9,6 +9,9 @@ const ExamRouter=require("./src/routes/ExamRouter");
 const QuestionRouter=require("./src/routes/QuestionRouter");
 const tokenRouter = require('./src/routes/TokenRouter');
 const ContactUsRouter = require('./src/routes/ContactUsRouter')
+const FlashCardRouter=require("./src/routes/FlashCardRouter.js")
+const FeedbackRouter=require("./src/routes/FeedbackRouter.js")
+const BookmarkRouter=require("./src/routes/BookmarkRouter.js")
 require('dotenv').config();
 
 const app = express();
@@ -31,6 +34,11 @@ app.use("/api/exam",ExamRouter);
 app.use("/api/question",QuestionRouter);
 app.use('/api/token', tokenRouter);
 app.use("/api",ContactUsRouter)
+app.use('/api/flashcards', FlashCardRouter);
+app.use("/api/feedback",FeedbackRouter)
+app.use("/api/bookmark",BookmarkRouter)
+
+
 
 
 const PORT = process.env.PORT || 5000;
